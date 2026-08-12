@@ -1,11 +1,11 @@
 [
   {
-    "run_id": "31600565608-20260812T131633",
+    "run_id": "31609902411-20260812T150037",
     "symbol": "BTCUSDT",
-    "started_at": "2026-08-12T13:16:33.978055+00:00",
-    "finished_at": "2026-08-12T14:06:40.494240+00:00",
-    "book_snapshots": 2838,
-    "trades_captured": 189883,
+    "started_at": "2026-08-12T15:00:37.272471+00:00",
+    "finished_at": "2026-08-12T15:50:44.518995+00:00",
+    "book_snapshots": 2835,
+    "trades_captured": 110961,
     "resync_count": 1,
     "status": "ok",
     "error_message": "",
