@@ -1,0 +1,14 @@
+[
+  {
+    "run_id": "31593818364-20260812T115255",
+    "symbol": "BTCUSDT",
+    "started_at": "2026-08-12T11:52:55.303526+00:00",
+    "finished_at": "2026-08-12T11:55:05.005862+00:00",
+    "book_snapshots": 113,
+    "trades_captured": 415,
+    "resync_count": 1,
+    "status": "ok",
+    "error_message": "",
+    "schema_version": 1
+  }
+]
