@@ -1,0 +1,105 @@
+name: 板記録 (Binance)
+
+on:
+  schedule:
+    # 毎時0分に起動。1回の記録は既定50分、残り約10分でセットアップ・アップロードを済ませる
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: '記録する秒数(省略時は3000=50分)'
+        required: false
+      symbols:
+        description: '対象シンボル カンマ区切り(省略時は BTCUSDT のみ)'
+        required: false
+
+permissions:
+  contents: write   # 実行サマリの commit に必要
+
+concurrency:
+  group: record-orderbook
+  cancel-in-progress: false   # 記録中のジョブは中断しない
+
+env:
+  GDRIVE_DEST: 'gdrive:AI-Team-Vault/プロジェクト/AI企画プロジェクト/仮想通貨FXAIシグナルツール/data'
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: 依存をインストール
+        run: pip install -r requirements.txt
+
+      - name: rclone を用意
+        run: |
+          VERSION=v1.74.1
+          curl -fsSL -o rclone.zip \
+            "https://github.com/rclone/rclone/releases/download/${VERSION}/rclone-${VERSION}-linux-amd64.zip"
+          unzip -q rclone.zip
+          sudo mv rclone-*/rclone /usr/local/bin/rclone
+          rclone version | head -1
+
+      - name: rclone 設定を配置
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONFIG_GDRIVE }}
+        run: |
+          if [ -z "$RCLONE_CONF" ]; then
+            echo "::error::Secret RCLONE_CONFIG_GDRIVE が未設定です"
+            exit 1
+          fi
+          mkdir -p ~/.config/rclone
+          printf '%s' "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
+          chmod 600 ~/.config/rclone/rclone.conf
+
+      - name: 板と約定を記録
+        env:
+          DURATION_SECONDS: ${{ inputs.duration_seconds }}
+          SYMBOLS: ${{ inputs.symbols }}
+        run: |
+          python -m src.ingest.binance_orderbook \
+            --symbols "${SYMBOLS:-BTCUSDT}" \
+            --duration-seconds "${DURATION_SECONDS:-3000}" \
+            --out ./data
+
+      - name: GDrive へアップロード
+        run: |
+          rclone copy ./data "${GDRIVE_DEST}" \
+            --use-mmap --buffer-size 0 --transfers 2 --checkers 4 \
+            --retries 5 --low-level-retries 10 \
+            --log-level NOTICE
+
+      # アップロードが実際に届いたかを検証する(PolyMarketのbtc_price_1s 22時間欠落の再発防止)
+      - name: アップロードを検証
+        run: |
+          LOCAL=$(find ./data -name '*.parquet' | wc -l | tr -d ' ')
+          REMOTE=$(rclone lsf -R --include '*.parquet' "${GDRIVE_DEST}" | wc -l | tr -d ' ')
+          echo "ローカル ${LOCAL}ファイル / リモート ${REMOTE}ファイル"
+          if [ "$REMOTE" -lt "$LOCAL" ]; then
+            echo "::error::リモートのファイル数がローカルを下回っています"
+            exit 1
+          fi
+
+      # 実行サマリを commit する。
+      # 副次効果として「60日リポジトリ無活動で schedule が自動停止する」のを防ぐ
+      - name: 実行サマリを commit
+        if: always()
+        run: |
+          mkdir -p ledger_summary
+          if [ -f ./data/ledger/latest_run.json ]; then
+            cp ./data/ledger/latest_run.json ledger_summary/latest.json
+          fi
+          [ -f ledger_summary/latest.json ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ledger_summary/
+          git diff --staged --quiet || git commit -m "chore: 板記録の実行サマリ更新 ($(date -u +%Y-%m-%dT%H:%M))"
+          git push
