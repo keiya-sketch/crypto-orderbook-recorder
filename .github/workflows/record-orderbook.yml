@@ -21,7 +21,9 @@ concurrency:
   cancel-in-progress: false   # 記録中のジョブは中断しない
 
 env:
-  GDRIVE_DEST: 'gdrive:AI-Team-Vault/プロジェクト/AI企画プロジェクト/仮想通貨FXAIシグナルツール/data'
+  # investment-validation リポジトリが集めている Binance klines と同じ Bronze データルートに統合する
+  # (klines: 1分足OHLCV / orderbook・trades: このリポジトリが追加するL2板と約定)
+  GDRIVE_DEST: 'gdrive:AI-Team-Vault/プロジェクト/投資検証基盤/data'
 
 jobs:
   record:

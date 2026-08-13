@@ -39,16 +39,20 @@ Privateのまま使う場合は、`schedule` の cron 頻度や `duration_second
 
 ## データの流れ
 
+**2026-08-13統合**: `investment-validation` リポジトリが既に集めている Binance klines(1分足OHLCV、BTCUSDT/ETHUSDT、2026-08-07〜)と同じ Bronze データルートに統合した。板・約定はコード(このリポジトリ)は分離したまま、出力先だけ揃えている。
+
 ```
-GitHub Actions (毎時50分間、板+約定をWSで記録)
-  → Bronze Parquet (ローカル一時ファイル)
-  → rclone で GDrive へアップロード
-     AI-Team-Vault/プロジェクト/AI企画プロジェクト/仮想通貨FXAIシグナルツール/data/
-       bronze/binance/orderbook/symbol=.../date=.../hour=.../data.parquet
-       bronze/binance/trades/symbol=.../date=.../hour=.../data.parquet
-       ledger/orderbook_runs/date=.../run_id=....parquet
+GitHub Actions (毎時50分間、板+約定をWSで記録)                    ← このリポジトリ
+GitHub Actions (日次、klines 1分足を記録)                        ← investment-validation リポジトリ
+  → どちらも Bronze Parquet (ローカル一時ファイル)
+  → rclone で同じ GDrive ルートへアップロード
+     AI-Team-Vault/プロジェクト/投資検証基盤/data/
+       bronze/binance/klines/symbol=.../interval=1m/date=.../data.parquet      ← investment-validation
+       bronze/binance/orderbook/symbol=.../date=.../hour=.../data.parquet      ← このリポジトリ
+       bronze/binance/trades/symbol=.../date=.../hour=.../data.parquet         ← このリポジトリ
+       ledger/orderbook_runs/date=.../run_id=....parquet                      ← このリポジトリ
   → Drive for Desktop が自動同期
-  → Mac 側で Silver/Gold へ変換し、逆選択・スリッページを実測(未着手)
+  → Mac 側で Silver/Gold へ変換し、klines・板・約定を突き合わせて逆選択・スリッページを実測(未着手)
 ```
 
 ## 板の再構成手順
