@@ -1,11 +1,23 @@
 [
   {
-    "run_id": "31652052514-20260812T234555",
+    "run_id": "31665360093-20260813T035517",
     "symbol": "BTCUSDT",
-    "started_at": "2026-08-12T23:45:55.911552+00:00",
-    "finished_at": "2026-08-13T00:36:04.640525+00:00",
-    "book_snapshots": 2836,
-    "trades_captured": 51635,
+    "started_at": "2026-08-13T03:55:17.239179+00:00",
+    "finished_at": "2026-08-13T03:57:24.171584+00:00",
+    "book_snapshots": 112,
+    "trades_captured": 792,
+    "resync_count": 1,
+    "status": "ok",
+    "error_message": "",
+    "schema_version": 1
+  },
+  {
+    "run_id": "31665360093-20260813T035517",
+    "symbol": "PEPEUSDT",
+    "started_at": "2026-08-13T03:55:17.261178+00:00",
+    "finished_at": "2026-08-13T03:57:25.984203+00:00",
+    "book_snapshots": 62,
+    "trades_captured": 3,
     "resync_count": 1,
     "status": "ok",
     "error_message": "",
