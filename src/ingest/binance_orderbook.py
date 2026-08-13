@@ -218,15 +218,28 @@ class Recorder:
         self.trades_total += 1
 
     def flush(self) -> None:
-        now = _utc_now()
-        if self.book_rows:
-            table = _rows_to_table(self.book_rows, BOOK_SCHEMA)
-            _write_parquet_append(table, _partition_path(self.out_root, "orderbook", self.symbol, now))
-            self.book_rows = []
-        if self.trade_rows:
-            table = _rows_to_table(self.trade_rows, TRADE_SCHEMA)
-            _write_parquet_append(table, _partition_path(self.out_root, "trades", self.symbol, now))
-            self.trade_rows = []
+        self._flush_kind(self.book_rows, "orderbook", BOOK_SCHEMA)
+        self.book_rows = []
+        self._flush_kind(self.trade_rows, "trades", TRADE_SCHEMA)
+        self.trade_rows = []
+
+    def _flush_kind(self, rows: list[dict], kind: str, schema: pa.Schema) -> None:
+        """行を ts(イベント時刻)の時間帯ごとにグルーピングしてから書く。
+
+        フラッシュ時刻(壁時計)でパーティションを決めると、時間の境界をまたいだ
+        直後の数分間が隣の hour= フォルダに漏れる(実測で発見・2026-08-13修正)。
+        DuckDB 等の Hive パーティション推論はフォルダ名をそのまま信じるため、
+        ts 列と hour= フォルダの不一致は将来のクエリを静かに誤らせる。
+        """
+        if not rows:
+            return
+        buckets: dict[tuple, list[dict]] = {}
+        for r in rows:
+            dt = r["ts"]
+            buckets.setdefault((dt.date(), dt.hour), []).append(r)
+        for group in buckets.values():
+            table = _rows_to_table(group, schema)
+            _write_parquet_append(table, _partition_path(self.out_root, kind, self.symbol, group[0]["ts"]))
 
 
 async def record_symbol(
