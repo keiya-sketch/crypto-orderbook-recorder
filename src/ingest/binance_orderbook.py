@@ -349,7 +349,10 @@ async def record_all(
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Binance の板(L2 diff)と約定を記録し Bronze Parquet に書く")
-    p.add_argument("--symbols", default="BTCUSDT", help="カンマ区切り(まずBTCのみで開始。ETH等は後から追加可)")
+    p.add_argument(
+        "--symbols", default="BTCUSDT,PEPEUSDT",
+        help="カンマ区切り。BTC(板が厚い対照)とPEPE(スプレッド37bpsで手数料10bpsより広い薄い板)を比較する",
+    )
     p.add_argument("--duration-seconds", type=int, default=3000, help="記録する秒数(既定50分)")
     p.add_argument("--depth-levels", type=int, default=DEFAULT_DEPTH_LEVELS)
     p.add_argument("--out", default="./data")

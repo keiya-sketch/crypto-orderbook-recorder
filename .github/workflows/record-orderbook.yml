@@ -10,7 +10,7 @@ on:
         description: '記録する秒数(省略時は3000=50分)'
         required: false
       symbols:
-        description: '対象シンボル カンマ区切り(省略時は BTCUSDT のみ)'
+        description: '対象シンボル カンマ区切り(省略時は BTCUSDT,PEPEUSDT)'
         required: false
 
 permissions:
@@ -68,7 +68,7 @@ jobs:
           SYMBOLS: ${{ inputs.symbols }}
         run: |
           python -m src.ingest.binance_orderbook \
-            --symbols "${SYMBOLS:-BTCUSDT}" \
+            --symbols "${SYMBOLS:-BTCUSDT,PEPEUSDT}" \
             --duration-seconds "${DURATION_SECONDS:-3000}" \
             --out ./data
 
